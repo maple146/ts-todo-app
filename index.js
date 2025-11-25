@@ -19,20 +19,25 @@ if (command == "complete") {
 }
 
 export function completeTodo(number) {
-    fs.readFile('output.txt', 'utf8', (err, data)  => {
-    const arrayData = data.split(',')
-    arrayData.splice(number, 1)
-    const arrayString = arrayData.toString()
-
-    if(err){
+    fs.readFile('output.json', 'utf8', (err, data)  => {
+    if (err) {
       console.error(err)
+      return
+    }
+    
+    const parsedData = JSON.parse(data)
+
+    if(parsedData.items[number].completed === false) {
+      parsedData.items[number].completed = true
+      console.log("Item completed")
     } else {
-      console.log("File read successfully")
+      console.error("Item is already completed")
     }
 
-    fs.writeFile('output.txt', arrayString, err => {
+    fs.writeFile('output.json', JSON.stringify(parsedData), err => {
       if (err) {
         console.error(err)
+        return
       } else {
         console.log("List updated successfully")
       }
@@ -41,26 +46,61 @@ export function completeTodo(number) {
 }
 
 export function showTodos() {
-  fs.readFile('output.txt', 'utf8', (err, data)  => {
+  fs.readFile('output.json', 'utf8', (err, data)  => {
     if(err){
       console.error(err)
     } else {
       console.log("File read successfully")
-      const arrayData = data.split(',')
-      console.log(data)
-      console.log(arrayData)
+      const parseData = JSON.parse(data)
+      console.log(parseData.items)
     }
   })
 }
 
 export function addTodo(text) {
-  fs.appendFile('output.txt', text + ',', err => {
-    if(err){
+  const convertedText = {"item": text, "completed": false}
+  
+  fs.readFile('output.json', 'utf-8', (err, data) => {
+    if(err) {
       console.error(err)
     } else {
-      console.log("File updated successfully")
+      // Check if json file is empty
+      if(data === ""){
+        console.log("JSON file is empty")
+        const baseStructure = {"items": []}
+
+        // Add base structure
+        fs.writeFile('output.json', JSON.stringify(baseStructure), err => {
+          if (err) {
+            console.error(err)
+            return
+          } else {
+            console.log("Base structure added successfully")
+          }
+        })
+      } else {
+        const parsedData = JSON.parse(data)
+
+        // Check if the key items exists in the json object
+        if ("items" in parsedData) {
+          // Add item
+          parsedData.items.push(convertedText)
+          fs.writeFile('output.json', JSON.stringify(parsedData), err => {
+            if (err) {
+              console.error(err)
+              return
+            } else {
+              console.log("New item added successfully")
+            }
+          })
+        } else {
+          console.error("Key items doesnt exists in the file")
+        }
+      }
     }
   })
+
+
   console.log("Adding: ", text)
 }
 
